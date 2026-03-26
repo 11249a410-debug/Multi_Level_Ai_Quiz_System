@@ -214,3 +214,4 @@ div.innerHTML=html;
 function toggleTheme(){
 document.body.classList.toggle("light");
 }
+window.onload = loadDashboard;
