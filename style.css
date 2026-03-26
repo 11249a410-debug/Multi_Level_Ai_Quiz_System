@@ -1,3 +1,12 @@
+/* DASHBOARD ALWAYS VISIBLE */
+#dashboard {
+    margin-top: 70px;
+}
+
+/* FIX OVERLAP */
+body {
+    padding-top: 20px;
+}
 body {
     margin:0;
     font-family:'Poppins',sans-serif;
