@@ -123,7 +123,13 @@ data=data.slice(0,25);
 localStorage.setItem(key,JSON.stringify(data));
 
 /* GLOBAL */
-saveGlobal(player, score, t);
+let global = JSON.parse(localStorage.getItem("GLOBAL")) || [];
+global.push({name:player,score:score,time:t});
+global.sort((a,b)=> b.score-a.score || a.time-b.time);
+localStorage.setItem("GLOBAL", JSON.stringify(global));
+
+/* UPDATE DASHBOARD */
+loadDashboard();
 
 hideAll();
 document.getElementById("result").style.display="block";
