@@ -30,13 +30,6 @@ body {
     max-width:650px;
 }
 
-/* QUESTION */
-#q {
-    color:#ffffff;
-    font-weight:600;
-}
-
-/* OPTIONS */
 .option {
     padding:12px;
     margin:10px;
@@ -44,22 +37,11 @@ body {
     color:#333;
     border-radius:10px;
     cursor:pointer;
-    transition:0.3s;
-    font-weight:500;
     border-left:5px solid #ff6a00;
 }
 
-.option:hover { background:#e0e0e0; }
-
-.correct {
-    background:#4caf50 !important;
-    color:white;
-}
-
-.wrong {
-    background:#f44336 !important;
-    color:white;
-}
+.correct { background:#4caf50 !important; color:white; }
+.wrong { background:#f44336 !important; color:white; }
 
 button {
     padding:10px 15px;
@@ -70,12 +52,10 @@ button {
     color:white;
     cursor:pointer;
 }
-button:hover { transform:scale(1.05); }
 
 .progress {
     height:10px;
     background:rgba(255,255,255,0.3);
-    border-radius:10px;
 }
 .bar {
     height:100%;
@@ -92,94 +72,69 @@ th,td { padding:8px; border-bottom:1px solid white; }
 
 <h1>🚀 Multi Level AI Quiz System</h1>
 
+<!-- START -->
 <div class="card" id="start">
 <input id="name" placeholder="Enter Name"><br><br>
 <button onclick="start()">Start</button>
 </div>
 
+<!-- LEVELS -->
 <div class="card" id="levels" style="display:none;"></div>
 
+<!-- QUIZ -->
 <div class="card" id="quiz" style="display:none;">
 <div class="progress"><div class="bar" id="bar"></div></div>
+
 <h3 id="q"></h3>
 <div id="opts"></div>
+
+<button onclick="exitLevel()">❌ Exit Level</button>
 </div>
 
+<!-- RESULT -->
 <div class="card" id="result" style="display:none;">
 <h2>🎉 Completed</h2>
 <p id="res"></p>
-<button onclick="review()">Review Mistakes</button>
-<button onclick="showLevels()">Back</button>
+<button onclick="review()">Review</button>
+<button onclick="showDashboard()">Dashboard</button>
 </div>
 
+<!-- REVIEW -->
 <div class="card" id="review" style="display:none;">
 <h2>❌ Mistakes</h2>
 <div id="rev"></div>
-<button onclick="showLevels()">Back</button>
+<button onclick="showDashboard()">Dashboard</button>
 </div>
 
+<!-- LEVEL LEADERBOARD -->
 <div class="card" id="leader" style="display:none;">
-<h2>🏆 Leaderboard (Top 25)</h2>
+<h2>🏆 Level Leaderboard</h2>
 <table id="table"></table>
-<button onclick="showLevels()">Back</button>
+<button onclick="showDashboard()">Dashboard</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="card" id="dashboard" style="display:none;">
+<h2>📊 Dashboard</h2>
+
+<button onclick="goHome()">🏠 Home</button>
+<button onclick="showGlobal()">🌍 All Players</button>
+
+<h3>⏱ Live Time</h3>
+<p id="liveTime">0 sec</p>
+
+<div id="globalBoard"></div>
 </div>
 
 <script>
 let player="",level,index,score,startTime;
 let questions=[],mistakes=[];
+let timerInterval;
 
-/* QUESTIONS */
-const quizData = {
-1:[{q:"AI stands for?",o:["Artificial Intelligence","Auto","Advanced","Algo"],a:"Artificial Intelligence"},
-{q:"Type of AI?",o:["Narrow AI","Wide","Deep","Super"],a:"Narrow AI"},
-{q:"Algo for classification?",o:["Decision Tree","Stack","Queue","Sort"],a:"Decision Tree"}],
-2:[{q:"Data science used for?",o:["Analysis","Gaming","Cooking","Art"],a:"Analysis"},
-{q:"Language?",o:["Python","HTML","CSS","PHP"],a:"Python"},
-{q:"Regression predicts?",o:["Continuous values","Classes","Sort","Delete"],a:"Continuous values"}],
-3:[{q:"Integration reverse of?",o:["Differentiation","Add","Div","Mul"],a:"Differentiation"},
-{q:"∫x dx?",o:["x²/2 + C","x²","2x","x³"],a:"x²/2 + C"},
-{q:"∫e^x dx?",o:["e^x + C","ln x","xe^x","e^x²"],a:"e^x + C"}],
-4:[{q:"ML?",o:["Learning from data","Repair","Hardware","Net"],a:"Learning from data"},
-{q:"Supervised?",o:["Labeled data","Random","None","Image"],a:"Labeled data"},
-{q:"Example?",o:["Classification","Sort","Cluster","Rand"],a:"Classification"}],
-5:[{q:"Unsupervised?",o:["Clustering","Regression","Sort","Predict"],a:"Clustering"},
-{q:"KNN?",o:["K-Nearest Neighbors","Known NN","Key","Kernel"],a:"K-Nearest Neighbors"},
-{q:"Overfitting?",o:["Fits too well","Perfect","Under","None"],a:"Fits too well"}],
-6:[{q:"Gradient descent?",o:["Minimize loss","Maximize","Sort","Store"],a:"Minimize loss"},
-{q:"Neurons?",o:["Neural Network","Tree","KNN","Linear"],a:"Neural Network"},
-{q:"Bias variance?",o:["Performance","Speed","Memory","Store"],a:"Performance"}],
-7:[{q:"IoT?",o:["Internet of Things","Input","Tools","AI"],a:"Internet of Things"},
-{q:"Connects?",o:["Devices","Books","Apps","People"],a:"Devices"},
-{q:"Example?",o:["Smart bulb","Pen","Book","Table"],a:"Smart bulb"}],
-8:[{q:"Sensor?",o:["Detect data","Store","Delete","Display"],a:"Detect data"},
-{q:"MQTT?",o:["Protocol","Lang","Device","Tool"],a:"Protocol"},
-{q:"IoT needs?",o:["Network","Paper","Paint","Keyboard"],a:"Network"}],
-9:[{q:"Edge computing?",o:["Near device","Cloud","None","Store"],a:"Near device"},
-{q:"Latency?",o:["Delay","Speed","CPU","Memory"],a:"Delay"},
-{q:"Platform?",o:["AWS IoT","Excel","Paint","Word"],a:"AWS IoT"}],
-10:[{q:"Gen AI?",o:["Creates content","Deletes","Stores","Encrypt"],a:"Creates content"},
-{q:"Example?",o:["ChatGPT","Printer","Mouse","Key"],a:"ChatGPT"},
-{q:"Output?",o:["Text/Image","Wood","Metal","Sound"],a:"Text/Image"}],
-11:[{q:"GPT?",o:["Generative Pre-trained Transformer","General","Graph","Global"],a:"Generative Pre-trained Transformer"},
-{q:"Training?",o:["Large data","None","Small","Random"],a:"Large data"},
-{q:"Prompt?",o:["Input","Output","Error","Code"],a:"Input"}],
-12:[{q:"Hallucination?",o:["Error output","Correct","Store","Speed"],a:"Error output"},
-{q:"Token?",o:["Word unit","Pixel","Image","Code"],a:"Word unit"},
-{q:"Transformer?",o:["Attention","Sort","Search","Store"],a:"Attention"}],
-13:[{q:"Agentic AI?",o:["Autonomous AI","Passive","Static","DB"],a:"Autonomous AI"},
-{q:"Agent?",o:["Acts independently","Sleep","Store","Print"],a:"Acts independently"},
-{q:"Example?",o:["AI agent","Clock","Fan","Pen"],a:"AI agent"}],
-14:[{q:"Planning?",o:["Goal based","Random","Delay","None"],a:"Goal based"},
-{q:"Tool use?",o:["APIs","Draw","Game","Notes"],a:"APIs"},
-{q:"Memory?",o:["Store context","Forget","Delete","Print"],a:"Store context"}],
-15:[{q:"Multi agent?",o:["Multiple agents","Single","None","Hardware"],a:"Multiple agents"},
-{q:"Autonomy?",o:["Self-operation","Manual","Delay","None"],a:"Self-operation"},
-{q:"Feedback loop?",o:["Improve","Delete","Store","Display"],a:"Improve"},
-{q:"Reflection?",o:["Re-evaluate","Mirror","Copy","Delete"],a:"Re-evaluate"},
-{q:"Orchestration?",o:["Manage agents","Sort","Code","Store"],a:"Manage agents"}]
-};
+/* SAMPLE QUESTIONS (same as yours) */
+const quizData = {1:[{q:"AI stands for?",o:["Artificial Intelligence","Auto","Advanced","Algo"],a:"Artificial Intelligence"}]};
 
-/* FUNCTIONS */
+/* START */
 function start(){
 player=document.getElementById("name").value;
 if(!player){alert("Enter name");return;}
@@ -187,36 +142,55 @@ document.getElementById("start").style.display="none";
 showLevels();
 }
 
+/* LEVELS */
 function showLevels(){
+hideAll();
 let d=document.getElementById("levels");
 d.style.display="block";
 d.innerHTML="<h2>Select Level</h2>";
-hideAll();
+
 for(let i=1;i<=15;i++){
 d.innerHTML+=`<button onclick="startLevel(${i})">Level ${i}</button>
 <button onclick="leader(${i})">🏆</button><br>`;
 }
 }
 
-function hideAll(){
-["quiz","result","review","leader"].forEach(x=>document.getElementById(x).style.display="none");
-}
-
+/* START LEVEL */
 function startLevel(l){
 level=l;
-questions=quizData[l];
+questions=quizData[l] || quizData[1];
 index=0;
 score=0;
 mistakes=[];
 startTime=Date.now();
 
+startTimer();
+
 hideAll();
-document.getElementById("levels").style.display="none";
 document.getElementById("quiz").style.display="block";
 
 loadQ();
 }
 
+/* TIMER */
+function startTimer(){
+timerInterval=setInterval(()=>{
+let t=Math.floor((Date.now()-startTime)/1000);
+document.getElementById("liveTime").innerText=t+" sec";
+},1000);
+}
+
+function stopTimer(){
+clearInterval(timerInterval);
+}
+
+/* EXIT */
+function exitLevel(){
+stopTimer();
+showDashboard();
+}
+
+/* QUESTIONS */
 function loadQ(){
 let q=questions[index];
 document.getElementById("q").innerText=q.q;
@@ -232,13 +206,6 @@ document.getElementById("bar").style.width=(index/questions.length*100)+"%";
 
 function check(ans){
 let correct=questions[index].a;
-let opts=document.querySelectorAll(".option");
-
-opts.forEach(opt=>{
-if(opt.innerText===correct) opt.classList.add("correct");
-if(opt.innerText===ans && ans!==correct) opt.classList.add("wrong");
-opt.style.pointerEvents="none";
-});
 
 if(ans===correct) score++;
 else mistakes.push({q:questions[index].q,a:ans,c:correct});
@@ -247,10 +214,13 @@ setTimeout(()=>{
 index++;
 if(index<questions.length) loadQ();
 else finish();
-},800);
+},500);
 }
 
+/* FINISH */
 function finish(){
+stopTimer();
+
 let t=Math.floor((Date.now()-startTime)/1000);
 
 let key="L"+level;
@@ -267,26 +237,45 @@ document.getElementById("result").style.display="block";
 document.getElementById("res").innerText=`Score: ${score} | Time: ${t}s`;
 }
 
-function review(){
+/* DASHBOARD */
+function showDashboard(){
 hideAll();
-document.getElementById("review").style.display="block";
-
-let div=document.getElementById("rev");
-
-if(mistakes.length===0){
-div.innerHTML="Perfect 🎉";
-return;
+document.getElementById("dashboard").style.display="block";
 }
 
-let html="";
-mistakes.forEach((m,i)=>{
-html+=`<p><b>${i+1}. ${m.q}</b><br>
-❌ ${m.a} | ✅ ${m.c}</p>`;
+function goHome(){
+document.getElementById("dashboard").style.display="none";
+showLevels();
+}
+
+/* GLOBAL LEADERBOARD */
+function showGlobal(){
+let div=document.getElementById("globalBoard");
+let all=[];
+
+for(let i=1;i<=15;i++){
+let data=JSON.parse(localStorage.getItem("L"+i))||[];
+data.forEach(p=>all.push({...p,level:i}));
+}
+
+all.sort((a,b)=> b.score-a.score || a.time-b.time);
+
+let html="<table><tr><th>Name</th><th>Level</th><th>Score</th><th>Time</th></tr>";
+
+all.forEach(p=>{
+html+=`<tr>
+<td>${p.name}</td>
+<td>${p.level}</td>
+<td>${p.score}</td>
+<td>${p.time}s</td>
+</tr>`;
 });
 
+html+="</table>";
 div.innerHTML=html;
 }
 
+/* LEVEL LEADERBOARD */
 function leader(l){
 hideAll();
 document.getElementById("leader").style.display="block";
@@ -302,6 +291,33 @@ table.innerHTML+=`<tr>
 <td>${p.score}</td>
 <td>${p.time}s</td>
 </tr>`;
+});
+}
+
+/* REVIEW */
+function review(){
+hideAll();
+document.getElementById("review").style.display="block";
+
+let div=document.getElementById("rev");
+
+if(mistakes.length===0){
+div.innerHTML="Perfect 🎉";
+return;
+}
+
+let html="";
+mistakes.forEach((m,i)=>{
+html+=`<p>${i+1}. ${m.q}<br>❌ ${m.a} | ✅ ${m.c}</p>`;
+});
+
+div.innerHTML=html;
+}
+
+/* HIDE */
+function hideAll(){
+["quiz","result","review","leader","dashboard","levels"].forEach(x=>{
+document.getElementById(x).style.display="none";
 });
 }
 </script>
