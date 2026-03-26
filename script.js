@@ -1,3 +1,24 @@
+function loadDashboard(){
+
+    let data = JSON.parse(localStorage.getItem("GLOBAL")) || [];
+
+    document.getElementById("totalPlayers").innerText = data.length;
+
+    let top = data.slice(0,20);
+
+    let html="";
+    top.forEach((p,i)=>{
+        html+=`
+        <tr>
+        <td>${i+1}</td>
+        <td>${p.name}</td>
+        <td>${p.score}</td>
+        <td>${p.time}s</td>
+        </tr>`;
+    });
+
+    document.getElementById("globalBoard").innerHTML = html;
+}
 let player="",level,index,score,startTime;
 let questions=[],mistakes=[];
 
