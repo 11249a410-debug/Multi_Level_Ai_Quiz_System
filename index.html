@@ -3,74 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <title>Multi Level AI Quiz System</title>
-
-<style>
-body {
-    margin:0;
-    font-family:'Poppins',sans-serif;
-    background: linear-gradient(-45deg,#667eea,#764ba2,#ff6a00,#00c9ff);
-    background-size:400% 400%;
-    animation:bg 10s infinite;
-    color:white;
-    text-align:center;
-}
-@keyframes bg {
-    0%{background-position:0%}
-    50%{background-position:100%}
-    100%{background-position:0%}
-}
-
-.card {
-    backdrop-filter: blur(12px);
-    background: rgba(255,255,255,0.15);
-    margin:20px auto;
-    padding:20px;
-    border-radius:20px;
-    width:85%;
-    max-width:650px;
-}
-
-.option {
-    padding:12px;
-    margin:10px;
-    background:#f5f5f5;
-    color:#333;
-    border-radius:10px;
-    cursor:pointer;
-    border-left:5px solid #ff6a00;
-}
-
-.correct { background:#4caf50 !important; color:white; }
-.wrong { background:#f44336 !important; color:white; }
-
-button {
-    padding:10px 15px;
-    border:none;
-    border-radius:10px;
-    margin:5px;
-    background:#ff6a00;
-    color:white;
-    cursor:pointer;
-}
-
-.progress {
-    height:10px;
-    background:rgba(255,255,255,0.3);
-}
-.bar {
-    height:100%;
-    background:#00ffcc;
-    width:0%;
-}
-
-table { width:100%; }
-th,td { padding:8px; border-bottom:1px solid white; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <h1>🚀 Multi Level AI Quiz System</h1>
+
+<button onclick="openDashboard()" class="dash-btn">📊 Dashboard</button>
+<button onclick="toggleTheme()" class="theme-btn">🌗 Theme</button>
 
 <!-- START -->
 <div class="card" id="start">
@@ -84,243 +25,48 @@ th,td { padding:8px; border-bottom:1px solid white; }
 <!-- QUIZ -->
 <div class="card" id="quiz" style="display:none;">
 <div class="progress"><div class="bar" id="bar"></div></div>
-
 <h3 id="q"></h3>
 <div id="opts"></div>
-
-<button onclick="exitLevel()">❌ Exit Level</button>
 </div>
 
 <!-- RESULT -->
 <div class="card" id="result" style="display:none;">
 <h2>🎉 Completed</h2>
 <p id="res"></p>
-<button onclick="review()">Review</button>
-<button onclick="showDashboard()">Dashboard</button>
+<button onclick="review()">Review Mistakes</button>
+<button onclick="showLevels()">Back</button>
 </div>
 
 <!-- REVIEW -->
 <div class="card" id="review" style="display:none;">
 <h2>❌ Mistakes</h2>
 <div id="rev"></div>
-<button onclick="showDashboard()">Dashboard</button>
+<button onclick="showLevels()">Back</button>
 </div>
 
 <!-- LEVEL LEADERBOARD -->
 <div class="card" id="leader" style="display:none;">
-<h2>🏆 Level Leaderboard</h2>
+<h2>🏆 Leaderboard (Top 25)</h2>
 <table id="table"></table>
-<button onclick="showDashboard()">Dashboard</button>
+<button onclick="showLevels()">Back</button>
 </div>
 
 <!-- DASHBOARD -->
 <div class="card" id="dashboard" style="display:none;">
 <h2>📊 Dashboard</h2>
 
-<button onclick="goHome()">🏠 Home</button>
-<button onclick="showGlobal()">🌍 All Players</button>
+<h3>Total Players: <span id="totalPlayers">0</span></h3>
 
-<h3>⏱ Live Time</h3>
-<p id="liveTime">0 sec</p>
+<h3>🏆 Top 20 Players (Global)</h3>
+<table>
+<tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th></tr>
+<tbody id="globalBoard"></tbody>
+</table>
 
-<div id="globalBoard"></div>
+<button onclick="showLevels()">⬅ Back</button>
 </div>
 
-<script>
-let player="",level,index,score,startTime;
-let questions=[],mistakes=[];
-let timerInterval;
-
-/* SAMPLE QUESTIONS (same as yours) */
-const quizData = {1:[{q:"AI stands for?",o:["Artificial Intelligence","Auto","Advanced","Algo"],a:"Artificial Intelligence"}]};
-
-/* START */
-function start(){
-player=document.getElementById("name").value;
-if(!player){alert("Enter name");return;}
-document.getElementById("start").style.display="none";
-showLevels();
-}
-
-/* LEVELS */
-function showLevels(){
-hideAll();
-let d=document.getElementById("levels");
-d.style.display="block";
-d.innerHTML="<h2>Select Level</h2>";
-
-for(let i=1;i<=15;i++){
-d.innerHTML+=`<button onclick="startLevel(${i})">Level ${i}</button>
-<button onclick="leader(${i})">🏆</button><br>`;
-}
-}
-
-/* START LEVEL */
-function startLevel(l){
-level=l;
-questions=quizData[l] || quizData[1];
-index=0;
-score=0;
-mistakes=[];
-startTime=Date.now();
-
-startTimer();
-
-hideAll();
-document.getElementById("quiz").style.display="block";
-
-loadQ();
-}
-
-/* TIMER */
-function startTimer(){
-timerInterval=setInterval(()=>{
-let t=Math.floor((Date.now()-startTime)/1000);
-document.getElementById("liveTime").innerText=t+" sec";
-},1000);
-}
-
-function stopTimer(){
-clearInterval(timerInterval);
-}
-
-/* EXIT */
-function exitLevel(){
-stopTimer();
-showDashboard();
-}
-
-/* QUESTIONS */
-function loadQ(){
-let q=questions[index];
-document.getElementById("q").innerText=q.q;
-
-let html="";
-q.o.forEach(o=>{
-html+=`<div class="option" onclick="check('${o}')">${o}</div>`;
-});
-document.getElementById("opts").innerHTML=html;
-
-document.getElementById("bar").style.width=(index/questions.length*100)+"%";
-}
-
-function check(ans){
-let correct=questions[index].a;
-
-if(ans===correct) score++;
-else mistakes.push({q:questions[index].q,a:ans,c:correct});
-
-setTimeout(()=>{
-index++;
-if(index<questions.length) loadQ();
-else finish();
-},500);
-}
-
-/* FINISH */
-function finish(){
-stopTimer();
-
-let t=Math.floor((Date.now()-startTime)/1000);
-
-let key="L"+level;
-let data=JSON.parse(localStorage.getItem(key))||[];
-
-data.push({name:player,score:score,time:t});
-data.sort((a,b)=> b.score-a.score || a.time-b.time);
-data=data.slice(0,25);
-
-localStorage.setItem(key,JSON.stringify(data));
-
-hideAll();
-document.getElementById("result").style.display="block";
-document.getElementById("res").innerText=`Score: ${score} | Time: ${t}s`;
-}
-
-/* DASHBOARD */
-function showDashboard(){
-hideAll();
-document.getElementById("dashboard").style.display="block";
-}
-
-function goHome(){
-document.getElementById("dashboard").style.display="none";
-showLevels();
-}
-
-/* GLOBAL LEADERBOARD */
-function showGlobal(){
-let div=document.getElementById("globalBoard");
-let all=[];
-
-for(let i=1;i<=15;i++){
-let data=JSON.parse(localStorage.getItem("L"+i))||[];
-data.forEach(p=>all.push({...p,level:i}));
-}
-
-all.sort((a,b)=> b.score-a.score || a.time-b.time);
-
-let html="<table><tr><th>Name</th><th>Level</th><th>Score</th><th>Time</th></tr>";
-
-all.forEach(p=>{
-html+=`<tr>
-<td>${p.name}</td>
-<td>${p.level}</td>
-<td>${p.score}</td>
-<td>${p.time}s</td>
-</tr>`;
-});
-
-html+="</table>";
-div.innerHTML=html;
-}
-
-/* LEVEL LEADERBOARD */
-function leader(l){
-hideAll();
-document.getElementById("leader").style.display="block";
-
-let table=document.getElementById("table");
-table.innerHTML="<tr><th>Name</th><th>Score</th><th>Time</th></tr>";
-
-let data=JSON.parse(localStorage.getItem("L"+l))||[];
-
-data.forEach(p=>{
-table.innerHTML+=`<tr>
-<td>${p.name}</td>
-<td>${p.score}</td>
-<td>${p.time}s</td>
-</tr>`;
-});
-}
-
-/* REVIEW */
-function review(){
-hideAll();
-document.getElementById("review").style.display="block";
-
-let div=document.getElementById("rev");
-
-if(mistakes.length===0){
-div.innerHTML="Perfect 🎉";
-return;
-}
-
-let html="";
-mistakes.forEach((m,i)=>{
-html+=`<p>${i+1}. ${m.q}<br>❌ ${m.a} | ✅ ${m.c}</p>`;
-});
-
-div.innerHTML=html;
-}
-
-/* HIDE */
-function hideAll(){
-["quiz","result","review","leader","dashboard","levels"].forEach(x=>{
-document.getElementById(x).style.display="none";
-});
-}
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
